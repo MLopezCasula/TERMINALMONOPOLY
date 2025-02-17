@@ -20,31 +20,22 @@ class COLORS:
     CHANCE = "\033[38;2;255;191;105m"
     COMMUNITY = "\033[38;2;0;137;255m"
     BLACK = "\033[38;5;0m"
-    # Player colors: red, green, yellow, blue, respectively
     playerColors = ["\033[38;5;1m", "\033[38;5;2m", "\033[38;5;3m", "\033[38;5;4m"]
-    # display colors are used for printing text in Terminal, like error messages, etc. Not to be used on gameboard.
     dispGREEN = "\033[38;5;2m"
     dispRED = "\033[38;5;9m"
     dispBLUE = "\033[38;5;12m"
-    RESET = "\033[0m" # Reset color
+    RESET = "\033[0m"
 
-    backBROWN = BROWN.replace("38", "48")
-    backLIGHTBLUE = LIGHTBLUE.replace("38", "48")
-    backROUGE = ROUGE.replace("38", "48")
-    backORANGE = ORANGE.replace("38", "48")
-    backRED = RED.replace("38", "48")
-    backYELLOW = YELLOW.replace("38", "48")
-    backGREEN = GREEN.replace("38", "48")
-    backBLUE = BLUE.replace("38", "48")
-    backWHITE = WHITE.replace("38", "48")
-    backCYAN = CYAN.replace("38", "48")
-    backLIGHTGRAY = LIGHTGRAY.replace("38", "48")
-    backLIGHTBLACK = LIGHTBLACK.replace("38", "48")
-    backCHANCE = CHANCE.replace("38", "48")
-    backCOMMUNITY = COMMUNITY.replace("38", "48")
-    backBLACK = BLACK.replace("38", "48")
-    
-    # TODO add default compatible colors for terminals that cannot handle RGB values (see issue #11). 
+    color_map = {  # Mapping colors to their backgrounds
+        "BROWN": BROWN, "LIGHTBLUE": LIGHTBLUE, "ROUGE": ROUGE, "ORANGE": ORANGE,
+        "RED": RED, "YELLOW": YELLOW, "GREEN": GREEN, "BLUE": BLUE, "WHITE": WHITE,
+        "CYAN": CYAN, "LIGHTGRAY": LIGHTGRAY, "LIGHTBLACK": LIGHTBLACK, "CHANCE": CHANCE,
+        "COMMUNITY": COMMUNITY, "BLACK": BLACK
+    }
+
+    back_colors = {key: value.replace("38", "48") for key, value in color_map.items()}
+
+    # TODO add default compatible colors for terminals that cannot handle RGB values (see issue #11).
     cBROWN = ""
     cbBROWN = ""
 
@@ -79,37 +70,49 @@ def center_lines(text, width):
         centered_lines = [line.center(width) for line in lines]
         return '\n'.join(centered_lines)
 
+
 def get_graphics() -> dict:
     """
     Reads all graphics from ascii.txt into a dictionary.
 
     Parameters: None
 
-    Returns: 
+    Returns:
     Dictionary with the key names of the graphics and the value of the graphic itself.
     The graphics are read from the ascii folder, where the key is the filename and the value is the graphic.
     """
+
     text_dict = {}
-    for dir_name, sub_dirs, files in os.walk("./ascii/"):
-        for file in files:
-            with open(os.path.join(dir_name, file), encoding='utf-8') as ascii_text:
+    ascii_dir = "./ascii/"
+
+    if not os.path.exists(ascii_dir):
+        os.makedirs(ascii_dir)  # Ensure the folder exists
+
+    for file in sorted(os.listdir(ascii_dir)):  # Sorting ensures consistent order
+        file_path = os.path.join(ascii_dir, file)
+        if os.path.isfile(file_path):
+            with open(file_path, encoding='utf-8') as ascii_text:
                 full_file = ascii_text.read()
                 split_file = full_file.splitlines(True)
                 no_header_ascii = ''.join(split_file[1:])
-                if (split_file[0].strip() == "GAMEBD"):
-                    text_dict[file] = bytes(no_header_ascii, 'utf-8').decode('unicode_escape').encode('latin-1').decode('utf-8')
-                elif (split_file[0].strip() == "CENTER"):
-                    text_dict[file] = center_lines(no_header_ascii, 75)
-                elif (split_file[0].strip() == "NWLCUT"):
-                    text_dict[file] = no_header_ascii.replace('\n', '')
-                elif (split_file[0].strip() == "NSTRIP"):
-                    text_dict[file] = no_header_ascii.strip()
-                elif (split_file[0].strip() == "LSTRIP"):
-                    text_dict[file] = no_header_ascii.lstrip()
-                elif (split_file[0].strip() == "RSTRIP"):
-                    text_dict[file] = no_header_ascii.rstrip()
-                else:
-                    text_dict[file] = '\n' + full_file
+
+                match split_file[0].strip():
+                    case "GAMEBD":
+                        text_dict[file] = bytes(no_header_ascii, 'utf-8').decode('unicode_escape').encode(
+                            'latin-1').decode('utf-8')
+                    case "CENTER":
+                        text_dict[file] = center_lines(no_header_ascii, 75)
+                    case "NWLCUT":
+                        text_dict[file] = no_header_ascii.replace('\n', '')
+                    case "NSTRIP":
+                        text_dict[file] = no_header_ascii.strip()
+                    case "LSTRIP":
+                        text_dict[file] = no_header_ascii.lstrip()
+                    case "RSTRIP":
+                        text_dict[file] = no_header_ascii.rstrip()
+                    case _:
+                        text_dict[file] = '\n' + full_file
+
     return text_dict
 
 # Use this object to access all graphics, instead of calling get_graphics() every time.
